@@ -10,8 +10,8 @@
 pthread_mutex_t bufferMutex;
 
 //Coniditional Variables for the buffer
-bool is_empty = true; //This is a conditional variable that is used to make the worker threads sleep and not ask for the mutex lock
-bool is_full = false; //This is a conditional variable that is used to make the main thread sleep and not ask for the mutex lock
+pthread_cond_t is_empty; 
+pthread_cond_t is_full; 
 
 
 typedef struct requestsBuffer {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     //Initializing the mutex
 
 
-    if (pthread_mutex_init(&mutex, NULL) != 0) {
+    if (pthread_mutex_init(&bufferMutex, NULL) != 0) {
         // Handle error
         //Chatgbt Loves to save my ass 
         return 1;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
     //initializing the condition variables
     
-    if(!pthread_cond_init(is_empty, NULL))
+    if(!pthread_cond_init(&is_empty, NULL))
     {
         perror("Condiiton variable is empty not set");
         return -1; 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
         //Error has occured
     }
 
-    if(!pthread_cond_init(is_full, NULL))
+    if(!pthread_cond_init(&is_full, NULL))
     {
         perror("Condiiton variable is full not set");
         return -1; 
