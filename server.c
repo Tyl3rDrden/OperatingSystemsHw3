@@ -1,13 +1,15 @@
 #include "segel.h"
 #include "request.h"
 #include <pthread.h>
-
+#include <string.h>
 
 #define NUMBEROFWORKERTHREADS 4
 #define QUEUESIZE 100
 #define FALSE 0
 #define TRUE 1
 #define RETURNERROR -1
+
+enum schedalg {BLOCK , DT, DH, BF, RANDOM};
 
 pthread_mutex_t bufferMutex;
 
@@ -62,11 +64,20 @@ int addRequest(int connfd)
     }
 }
 
+void overRideLastElement(int connfd)
+{
+    if(reqbuffer.is_empty)
+    {
+        perror("Buffer is empty, cannot override last element");
+        return;
+    }
+    close(reqbuffer.requests[reqbuffer.tail]); //Closing the connection to the last element
+    reqbuffer.requests[reqbuffer.tail] = connfd;
+}
 
 typedef struct workerThread {
-    pthread_t thread;
-    int id;
-};
+    pthread_t thread;// For now until i add more fields
+} workerThread;
 
 
 
@@ -81,13 +92,41 @@ typedef struct workerThread {
 //
 
 // HW3: Parse the new arguments too
-void getargs(int *port, int argc, char *argv[])
+void getargs(int *port, int *numOfThreads, int * queueSize,int *schedalg, int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc < 5) {
 	fprintf(stderr, "Usage: %s <port>\n", argv[0]);
 	exit(1);
     }
     *port = atoi(argv[1]);
+    *numOfThreads = atoi(argv[2]);
+    *queueSize = atoi(argv[3]);
+    if(strcmp(argv[4], "block") == 0)
+    {
+        *schedalg = BLOCK;
+    }
+    else if(strcmp(argv[4], "dt") == 0)
+    {
+        *schedalg = DT;
+    }
+    else if(strcmp(argv[4], "dh") == 0)
+    {
+        *schedalg = DH;
+    }
+    else if(strcmp(argv[4], "bf") == 0)
+    {
+        *schedalg = BF;
+    }
+    else if(strcmp(argv[4], "random") == 0)
+    {
+        *schedalg = RANDOM;
+    }
+    else
+    {
+        perror("Invalid scheduling algorithm");
+        exit(1);
+    }
+
 }
 
 
@@ -114,6 +153,8 @@ void workerSingleThreadRoutine()
         }
 
 }
+
+
 void* threadRoutine()
 {
     while(1){
@@ -130,11 +171,10 @@ void* threadRoutine()
 
 int main(int argc, char *argv[])
 {
-    int listenfd, connfd, port, clientlen;
+    int listenfd, connfd, port, clientlen, numOfThreads = NUMBEROFWORKERTHREADS, queueSize = 100, schedalg = BLOCK;
     struct sockaddr_in clientaddr;
 
-
-    getargs(&port, argc, argv);
+    getargs(&port, &numOfThreads, &queueSize, &schedalg, argc, argv);
 
     //Initializing the mutex
 
@@ -159,7 +199,7 @@ int main(int argc, char *argv[])
     if(pthread_cond_init(&workerWakeUp, NULL) != 0)
     {
         perror("Condiiton variable is full not set");
-        return -1; 
+        return RETURNERROR; 
         
         //Error has occured
     }
@@ -171,31 +211,57 @@ int main(int argc, char *argv[])
 
     //Here we need to create a queue of requests and make it empty
     //Also we need to initialize a fixed number of worker threads
-    int threadIds[NUMBEROFWORKERTHREADS];
+    workerThread* workerThreads = malloc(sizeof(workerThread)* numOfThreads);
+
     for (int i = 0; i < NUMBEROFWORKERTHREADS; i++)
     {
-        if(pthread_create(threadIds + i, NULL, threadRoutine, NULL) != 0)
+        if(pthread_create(&workerThreads[i].thread, NULL, threadRoutine, NULL) != 0)
         {
-            perror("Routine error");
-            return -1; 
+            perror("Failure creating a Thread for some reason!");
+            return RETURNERROR; 
         }
         
     }
     //Threads created.. Now add requests to queue..
     listenfd = Open_listenfd(port);
-    while (1) 
+    while (TRUE) 
     {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         //Add the request to the queue
         pthread_mutex_lock(&bufferMutex);
+
+
+        int block  = FALSE;
         while(reqbuffer.is_full)
         {
-            pthread_cond_wait(&masterWakeUp, &bufferMutex);
-            //Check that the buffer is not full and wait on the conditional variable
-            //Ask for resource, get the request, release the resource and startthe route later
+            if(schedalg == BLOCK)
+            {
+                pthread_cond_wait(&masterWakeUp, &bufferMutex);
+            }
+            else if(schedalg == DT)
+            {
+                block = TRUE;
+                close(connfd);
+                //Dropping the request by not adding it to the queue
+                //Design here is abit off
+                break;
+            }
+            else if (schedalg == DH)
+            {
+                overRideLastElement(connfd);
+                block = TRUE;
+                break;
+                // I need to drop the head of the queue
+            }
+            
+            //This is the block
         }
-        addRequest(connfd);
+        if(block == FALSE)
+        {
+            addRequest(connfd);
+        }
+        
         pthread_mutex_unlock(&bufferMutex);
     }
 
