@@ -271,6 +271,7 @@ void requestHandle(workerThread *currentThread)
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not run this CGI program", currentThread);
          return;
       }
+      
       requestServeDynamic(fd, filename, cgiargs, currentThread);
 
       //This is my code

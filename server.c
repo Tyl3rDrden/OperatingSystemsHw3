@@ -17,7 +17,7 @@ void handle_sigint(int sig)
     close(listenfd);
 
     // Exit the program
-    printf("Closed the listening socket\n");
+    //printf("Closed the listening socket\n");
     exit(0);
 }
 
@@ -157,7 +157,7 @@ void* threadRoutine(void *arg)
 
 
     //This is used fro debugging
-    printf("Thread %d is alive\n", currentThread->id);
+    //printf("Thread %d is alive\n", currentThread->id);
 
 
     while(1){
