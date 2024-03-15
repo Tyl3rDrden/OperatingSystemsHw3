@@ -61,6 +61,8 @@ void clientPrint(int fd)
     if (sscanf(buf, "Content-Length: %d ", &length) == 1) {
       printf("Length = %d\n", length);
     }
+  //Ill need to add here the statistics i need to collect
+
   }
 
   /* Read and display the HTTP Body */

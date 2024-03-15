@@ -2,48 +2,44 @@
 #include "request.h"
 #include <pthread.h>
 #include <string.h>
-
-#define NUMBEROFWORKERTHREADS 4
-#define QUEUESIZE 100
-#define FALSE 0
-#define TRUE 1
-#define RETURNERROR -1
-
-enum schedalg {BLOCK , DT, DH, BF, RANDOM};
-
-pthread_mutex_t bufferMutex;
-
-//Coniditional Variables for the buffer
-pthread_cond_t masterWakeUp; 
-pthread_cond_t workerWakeUp; 
-
-//Global variavles
+#include <sys/time.h>
 
 
-typedef struct requestsBuffer {
-    int requests[QUEUESIZE]; // Initialize all elements to 0
-    int head;
-    int tail;
-    int is_empty; // This is essentially a booleaen 
-    int is_full;
-} requestsBuffer;
 
-requestsBuffer reqbuffer;
+#include <signal.h>
 
-int getRequest()
+
+
+
+void handle_sigint(int sig) 
 {
+    // Close the listening socket
+    close(listenfd);
+
+    // Exit the program
+    printf("Closed the listening socket\n");
+    exit(0);
+}
+
+struct request getRequest()
+{
+    struct request req;
     if(reqbuffer.head == reqbuffer.tail)
     {
         reqbuffer.is_empty = TRUE;
-        return RETURNERROR;
+        req.connfd = RETURNERROR;
+        //Return garbage value
+        return req;
     }
     else
     {
-        int request = reqbuffer.requests[reqbuffer.tail];
+        req = reqbuffer.requests[reqbuffer.tail];
+        gettimeofday(&req.dispatchTime, NULL);
         reqbuffer.tail = (reqbuffer.tail + 1) % QUEUESIZE; //Increment the tail to get a fifo extraction
         reqbuffer.is_full = FALSE;
         pthread_cond_signal(&masterWakeUp);
-        return request;
+        //Returns a copy of the struct request
+        return req;
     }
 }
 int addRequest(int connfd)
@@ -56,7 +52,8 @@ int addRequest(int connfd)
     }
     else
     {
-        reqbuffer.requests[reqbuffer.head] = connfd;
+        reqbuffer.requests[reqbuffer.head].connfd = connfd;
+        gettimeofday(&reqbuffer.requests[reqbuffer.head].arrivalTime, NULL);
         reqbuffer.head = (reqbuffer.head + 1) % QUEUESIZE;
         reqbuffer.is_empty = FALSE;
         pthread_cond_signal(&workerWakeUp);
@@ -71,14 +68,9 @@ void overRideLastElement(int connfd)
         perror("Buffer is empty, cannot override last element");
         return;
     }
-    close(reqbuffer.requests[reqbuffer.tail]); //Closing the connection to the last element
-    reqbuffer.requests[reqbuffer.tail] = connfd;
+    close(reqbuffer.requests[reqbuffer.tail].connfd); //Closing the connection to the last element
+    reqbuffer.requests[reqbuffer.tail].connfd = connfd;
 }
-
-typedef struct workerThread {
-    pthread_t thread;// For now until i add more fields
-} workerThread;
-
 
 
 // 
@@ -130,13 +122,14 @@ void getargs(int *port, int *numOfThreads, int * queueSize,int *schedalg, int ar
 }
 
 
-void handleRequest(int connfd)
+void handleRequest(workerThread *currentThread)
 {
-    requestHandle(connfd);
-    Close(connfd);
+    requestHandle(currentThread);
+    currentThread->count++;
+    Close(currentThread->currentRequest.connfd);
 }
 
-void workerSingleThreadRoutine()
+struct request workerSingleThreadRoutine()
 {
         pthread_mutex_lock(&bufferMutex);
         while(reqbuffer.is_empty)
@@ -145,21 +138,35 @@ void workerSingleThreadRoutine()
             //Check that the buffer is not empty and wait on the conditional variable
             //Ask for resource, get the request, release the resource and startthe route later
         }
-        int request = getRequest();
+        struct request req = getRequest();
         pthread_mutex_unlock(&bufferMutex);
-        if(request != RETURNERROR)
-        {
-            handleRequest(request);
-        }
+        return req;
+        
 
 }
 
 
-void* threadRoutine()
+void* threadRoutine(void *arg)
 {
+    workerThread *currentThread = (workerThread*) arg;
+    currentThread->dynamicCount = 0;
+    currentThread->staticCount = 0;
+    currentThread->count = 0;  
+    //This is the main routine of the worker thread
+    //I want the scope of currenThread to be here in order to handle the request with the statistics and id ...
+
+
+    //This is used fro debugging
+    printf("Thread %d is alive\n", currentThread->id);
+
+
     while(1){
         //this part will probably encapsulate the second aprt
-        workerSingleThreadRoutine();
+        currentThread->currentRequest = workerSingleThreadRoutine();
+        if(currentThread->currentRequest.connfd != RETURNERROR)
+        {
+            handleRequest(currentThread);
+        }
     }
 }
 
@@ -171,12 +178,15 @@ void* threadRoutine()
 
 int main(int argc, char *argv[])
 {
-    int listenfd, connfd, port, clientlen, numOfThreads = NUMBEROFWORKERTHREADS, queueSize = 100, schedalg = BLOCK;
+    int connfd, port, clientlen, numOfThreads = NUMBEROFWORKERTHREADS, queueSize = 100, schedalg = BLOCK;
     struct sockaddr_in clientaddr;
 
     getargs(&port, &numOfThreads, &queueSize, &schedalg, argc, argv);
 
     //Initializing the mutex
+
+    signal(SIGINT, handle_sigint);
+
 
 
     if (pthread_mutex_init(&bufferMutex, NULL) != 0) {
@@ -213,9 +223,10 @@ int main(int argc, char *argv[])
     //Also we need to initialize a fixed number of worker threads
     workerThread* workerThreads = malloc(sizeof(workerThread)* numOfThreads);
 
-    for (int i = 0; i < NUMBEROFWORKERTHREADS; i++)
+    for (int i = 0; i < numOfThreads; i++)
     {
-        if(pthread_create(&workerThreads[i].thread, NULL, threadRoutine, NULL) != 0)
+        workerThreads[i].id = i;
+        if(pthread_create(&workerThreads[i].thread, NULL, threadRoutine, &workerThreads[i]) != 0)
         {
             perror("Failure creating a Thread for some reason!");
             return RETURNERROR; 
@@ -253,6 +264,14 @@ int main(int argc, char *argv[])
                 block = TRUE;
                 break;
                 // I need to drop the head of the queue
+            }
+            else
+            {
+                //BF and Random
+                //TODO As bonus.. 
+                perror("Not implemented yet");
+                return 0;
+            
             }
             
             //This is the block
