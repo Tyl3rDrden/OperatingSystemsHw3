@@ -53,12 +53,13 @@ void handle_sigint(int sig)
 
 struct request getRequest()
 {
-    struct request req;
+    struct request req = { 0, {0, 0}, {0, 0}};
     
     if(reqbuffer.head == reqbuffer.tail)
     {
-        logEvent("Worker: Queue is empty, cannot get request");
+        logEvent("Worker: Queue is empty, cannot get request ");
         reqbuffer.is_empty = TRUE;
+        reqbuffer.is_full = FALSE;
         req.connfd = RETURNERROR;
         pthread_cond_signal(&masterWakeUp);
         //Return garbage value
@@ -67,14 +68,18 @@ struct request getRequest()
     else
     {
         //printf("Getting request from the queue %d is the tail and %d is the head \n\n",reqbuffer.tail +1, reqbuffer.head);
-        logEvent("Worker: Getting request from the queue %d is the tail and %d is the head \n\n",reqbuffer.tail +1, reqbuffer.head);
+        
         req = reqbuffer.requests[reqbuffer.tail];
         gettimeofday(&req.dispatchTime, NULL);
         req.dispatchTime.tv_sec -= req.arrivalTime.tv_sec;
         req.dispatchTime.tv_usec -= req.arrivalTime.tv_usec; 
-        reqbuffer.tail = (reqbuffer.tail + 1) % queueSize; //Increment the tail to get a fifo extraction
+        struct timeval currentTime;
+        gettimeofday(&currentTime, NULL);
+        logEvent("Dispatch time is %lu.%06lu , current time is %lu.%lu", req.dispatchTime.tv_sec, req.dispatchTime.tv_usec, currentTime.tv_sec, currentTime.tv_usec);
+        reqbuffer.tail = (reqbuffer.tail + 1); //Increment the tail to get a fifo extraction
         reqbuffer.is_full = FALSE;
-        pthread_cond_signal(&masterWakeUp);
+        //pthread_cond_broadcast(&masterWakeUp);
+        logEvent("Worker: Getting request tail %d from the queue ", reqbuffer.tail-1);
         //Returns a copy of the struct request
         return req;
     }
@@ -82,19 +87,22 @@ struct request getRequest()
 int addRequest(int connfd)
 {
     //printf("Adding request to the queue %d is the tail and %d is the head \n\n",reqbuffer.tail, reqbuffer.head +1 );
-    if((reqbuffer.head + 1) % queueSize == reqbuffer.tail)
+    if((reqbuffer.head + 1) == reqbuffer.tail)
     {
         logEvent("Buffer is full, cannot add request");
         reqbuffer.is_full = TRUE;
+        reqbuffer.is_empty = FALSE;
         return RETURNERROR;
         //We are full Return error code
     }
     else
     {
-        logEvent("Adding request to the queue %d is the tail and %d is the head \n\n",reqbuffer.tail, reqbuffer.head +1 );
+        struct timeval currentTime;
+        gettimeofday(&currentTime, NULL);
+        logEvent("Adding request to the queue %d is the tail and %d is the head , currenttime %lu.%lu \n\n",reqbuffer.tail, reqbuffer.head +1, currentTime.tv_sec, currentTime.tv_usec);
         reqbuffer.requests[reqbuffer.head].connfd = connfd;
         gettimeofday(&reqbuffer.requests[reqbuffer.head].arrivalTime, NULL);
-        reqbuffer.head = (reqbuffer.head + 1) % queueSize;
+        reqbuffer.head = (reqbuffer.head + 1);
         reqbuffer.is_empty = FALSE;
         pthread_cond_signal(&workerWakeUp);
         //Can be broadcast
@@ -171,9 +179,11 @@ void getargs(int *port, int *numOfThreads, int * queueSize,int *schedalg, int ar
 
 void handleRequest(workerThread *currentThread)
 {
-    requestHandle(currentThread);
-    //logEvent("Worker: Request handled, closing connection");
     currentThread->count++;
+    requestHandle(currentThread);
+    //logEvent("Not crashed yet");
+    //logEvent("Worker: Request handled, closing connection");
+    
     close(currentThread->currentRequest.connfd);
 }
 /*
@@ -187,6 +197,7 @@ struct request workerSingleThreadRoutine()
 
 void* threadRoutine(void *arg)
 {
+    
     workerThread *currentThread = (workerThread*) arg;
     currentThread->dynamicCount = 0;
     currentThread->staticCount = 0;
@@ -205,17 +216,19 @@ void* threadRoutine(void *arg)
         while(reqbuffer.is_empty)
         {
             pthread_cond_wait(&workerWakeUp, &bufferMutex);
+            logEvent("Thread Wit id %d, is alive\n", currentThread->id);
             //Check that the buffer is not empty and wait on the conditional variable
             //Ask for resource, get the request, release the resource and startthe route later
         }
         currentThread->currentRequest = getRequest();
-        //pthread_cond_signal(&masterWakeUp);
+        logEvent("Not dead yet");
+        pthread_cond_signal(&masterWakeUp);
         pthread_mutex_unlock(&bufferMutex);
-        
         if(currentThread->currentRequest.connfd != RETURNERROR)
         {
             //logEvent("Worker: Handling request fd is %d, %d", currentThread->currentRequest.connfd);
             handleRequest(currentThread);
+            
         }
     }
 }
@@ -317,7 +330,8 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         //Add the request to the queue
         pthread_mutex_lock(&bufferMutex);
-        logEvent("++++++++++Master attained lock, adding request to the queue++++++++++");
+
+        logEvent("++++++++++Master attained lock, adding request to the queue++++++++++ ");
 
         int block  = FALSE;
         while(reqbuffer.is_full)
@@ -326,6 +340,7 @@ int main(int argc, char *argv[])
             if(schedalg == BLOCK)
             {
                 logEvent("Master: Blocking the request and waiting for the the wakup signal from the worker threads");
+                pthread_cond_signal(&workerWakeUp);
                 pthread_cond_wait(&masterWakeUp, &bufferMutex);
             }
             else if(schedalg == DT)

@@ -1,330 +1,86 @@
-Server Started with arguments: port: 23434, numOfThreads: 8, queueSize: 8, schedalg: 0
-++++++++++Master attained lock, adding request to the queue++++++++++
+Server Started with arguments: port: 24625, numOfThreads: 4, queueSize: 8, schedalg: 2
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 0 is the tail and 1 is the head 
+Adding request to the queue 0 is the tail and 1 is the head , currenttime 1710696553.738198 
 
 
-++++++++++Master attained lock, adding request to the queue++++++++++
+Thread Wit id 0, is alive
+
+Dispatch time is 0.000803 , current time is 1710696553.739012
+Worker: Getting request tail 0 from the queue 
+Not dead yet
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 0 is the tail and 2 is the head 
+Adding request to the queue 1 is the tail and 2 is the head , currenttime 1710696553.841393 
 
 
-Worker: Getting request from the queue 1 is the tail and 2 is the head 
+Thread Wit id 1, is alive
 
-
-Worker: Getting request from the queue 2 is the tail and 2 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+Dispatch time is 0.000822 , current time is 1710696553.842226
+Worker: Getting request tail 1 from the queue 
+Not dead yet
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 2 is the tail and 3 is the head 
+Adding request to the queue 2 is the tail and 3 is the head , currenttime 1710696553.951091 
 
 
-Worker: Getting request from the queue 3 is the tail and 3 is the head 
+Thread Wit id 2, is alive
 
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+Dispatch time is 0.005429 , current time is 1710696553.956529
+Worker: Getting request tail 2 from the queue 
+Not dead yet
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 3 is the tail and 4 is the head 
+Adding request to the queue 3 is the tail and 4 is the head , currenttime 1710696554.53909 
 
 
-Worker: Getting request from the queue 4 is the tail and 4 is the head 
+Thread Wit id 3, is alive
 
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+Dispatch time is 0.000233 , current time is 1710696554.54151
+Worker: Getting request tail 3 from the queue 
+Not dead yet
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 5 is the head 
+Adding request to the queue 4 is the tail and 5 is the head , currenttime 1710696554.157799 
 
 
-Worker: Getting request from the queue 5 is the tail and 5 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 5 is the tail and 6 is the head 
+Adding request to the queue 4 is the tail and 6 is the head , currenttime 1710696554.259143 
 
 
-Worker: Getting request from the queue 6 is the tail and 6 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 6 is the tail and 7 is the head 
+Adding request to the queue 4 is the tail and 7 is the head , currenttime 1710696554.362319 
 
 
-Worker: Getting request from the queue 7 is the tail and 7 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 8 is the head 
+Adding request to the queue 4 is the tail and 8 is the head , currenttime 1710696554.465275 
 
 
-Worker: Getting request from the queue 8 is the tail and 0 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 0 is the tail and 1 is the head 
+Adding request to the queue 4 is the tail and 9 is the head , currenttime 1710696554.568867 
 
 
-Worker: Getting request from the queue 1 is the tail and 1 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
+++++++++++Master attained lock, adding request to the queue++++++++++ 
 Master: Adding request to the queue
-Adding request to the queue 1 is the tail and 2 is the head 
-
-
-Worker: Getting request from the queue 2 is the tail and 2 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 2 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 3 is the tail and 3 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 3 is the tail and 4 is the head 
-
-
-Worker: Getting request from the queue 4 is the tail and 4 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 5 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 5 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 6 is the tail and 6 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 6 is the tail and 7 is the head 
-
-
-Worker: Getting request from the queue 7 is the tail and 7 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 8 is the head 
-
-
-Worker: Getting request from the queue 8 is the tail and 0 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 0 is the tail and 1 is the head 
-
-
-Worker: Getting request from the queue 1 is the tail and 1 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 1 is the tail and 2 is the head 
-
-
-Worker: Getting request from the queue 2 is the tail and 2 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 2 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 3 is the tail and 3 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 3 is the tail and 4 is the head 
-
-
-Worker: Getting request from the queue 4 is the tail and 4 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 5 is the head 
-
-
-Worker: Getting request from the queue 5 is the tail and 5 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 5 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 6 is the tail and 6 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 6 is the tail and 7 is the head 
-
-
-Worker: Getting request from the queue 7 is the tail and 7 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 8 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 1 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 2 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 8 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 1 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 2 is the tail and 3 is the head 
-
-
-Worker: Getting request from the queue 3 is the tail and 3 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 3 is the tail and 4 is the head 
-
-
-Worker: Getting request from the queue 4 is the tail and 4 is the head 
-
-
-Worker: Queue is empty, cannot get request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 5 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 6 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 7 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 8 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 1 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 2 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 4 is the tail and 3 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Buffer is full, cannot add request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Queue is full
-Master: Blocking the request and waiting for the the wakup signal from the worker threads
-Worker: Getting request from the queue 5 is the tail and 3 is the head 
-
-
-Master: Adding request to the queue
-Adding request to the queue 5 is the tail and 4 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Buffer is full, cannot add request
-++++++++++Master attained lock, adding request to the queue++++++++++
-Queue is full
-Master: Blocking the request and waiting for the the wakup signal from the worker threads
-Worker: Getting request from the queue 6 is the tail and 4 is the head 
-
-
-Worker: Getting request from the queue 7 is the tail and 4 is the head 
-
-
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 5 is the head 
-
-
-++++++++++Master attained lock, adding request to the queue++++++++++
-Master: Adding request to the queue
-Adding request to the queue 7 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 8 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 1 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 2 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 3 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 4 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 5 is the tail and 6 is the head 
-
-
-Worker: Getting request from the queue 6 is the tail and 6 is the head 
-
-
-Worker: Queue is empty, cannot get request
+Adding request to the queue 4 is the tail and 10 is the head , currenttime 1710696554.672376 
+
+
+Dispatch time is 0.584224 , current time is 1710696554.742031
+Worker: Getting request tail 4 from the queue 
+Not dead yet
+Dispatch time is 0.686452 , current time is 1710696554.945604
+Worker: Getting request tail 5 from the queue 
+Not dead yet
+Dispatch time is 1.18446744073709349382 , current time is 1710696555.160095
+Worker: Getting request tail 6 from the queue 
+Not dead yet
+Dispatch time is 1.18446744073709443824 , current time is 1710696555.357492
+Worker: Getting request tail 7 from the queue 
+Not dead yet
+Dispatch time is 2.18446744073709147196 , current time is 1710696556.164457
+Worker: Getting request tail 8 from the queue 
+Not dead yet

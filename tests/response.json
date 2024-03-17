@@ -2,14 +2,14 @@
     "status_code": 200,
     "headers": {
         "Server": "OS-HW3 Web Server",
-        "Stat-Req-Arrival": ": 1710682210.925241",
-        "Stat-Req-Dispatch": ": 1.18446744073708830397",
-        "Stat-Thread-Id": ": 7",
-        "Stat-Thread-Count": ": 4",
-        "Stat-Thread-Static": ": 3",
+        "Stat-Req-Arrival": ": 1710695976.394117",
+        "Stat-Req-Dispatch": ": 0.000348",
+        "Stat-Thread-Id": ": 0",
+        "Stat-Thread-Count": ": 1",
+        "Stat-Thread-Static": ": 0",
         "Stat-Thread-Dynamic": ": 1",
         "Content-length": "123",
         "Content-type": "text/html"
     },
-    "text": "<p>Welcome to the CGI program</p>\r\n<p>My only purpose is to waste time on the server!</p>\r\n<p>I spun for 0.31 seconds</p>\r\n"
+    "text": "<p>Welcome to the CGI program</p>\r\n<p>My only purpose is to waste time on the server!</p>\r\n<p>I spun for 1.00 seconds</p>\r\n"
 }

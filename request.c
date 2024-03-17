@@ -226,21 +226,23 @@ void requestHandle(workerThread *currentThread)
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not read this file", currentThread);
          return;
       }
+      currentThread->staticCount++;
       requestServeStatic(fd, filename, sbuf.st_size, currentThread);
+      
       //This is my code
       //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      currentThread->staticCount++;
+      
    } else {
       if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not run this CGI program", currentThread);
          return;
       }
-      
+      currentThread->dynamicCount++;
       requestServeDynamic(fd, filename, cgiargs, currentThread);
-
+      
       //This is my code
       //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      currentThread->dynamicCount++;
+      
    }
 }
 
