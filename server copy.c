@@ -9,37 +9,7 @@
 #include <signal.h>
 
 
-#include <stdarg.h>
 
-
-
-void clearLogFile() {
-    FILE* logFile = fopen("server.log", "w");
-    if (logFile == NULL) {
-        perror("Error opening log file");
-        return;
-    }
-    fclose(logFile);
-}
-
-void logEvent(const char* format, ...) {
-    FILE* logFile = fopen("server.log", "a");
-    if (logFile == NULL) {
-        perror("Error opening log file");
-        return;
-    }
-
-    va_list args;
-    va_start(args, format);
-    vfprintf(logFile, format, args);
-    va_end(args);
-
-    fprintf(logFile, "\n");
-    fclose(logFile);
-}
-
-
-int queueSize;
 
 void handle_sigint(int sig) 
 {
@@ -54,25 +24,20 @@ void handle_sigint(int sig)
 struct request getRequest()
 {
     struct request req;
-    
     if(reqbuffer.head == reqbuffer.tail)
     {
-        logEvent("Worker: Queue is empty, cannot get request");
         reqbuffer.is_empty = TRUE;
         req.connfd = RETURNERROR;
-        pthread_cond_signal(&masterWakeUp);
         //Return garbage value
         return req;
     }
     else
     {
-        //printf("Getting request from the queue %d is the tail and %d is the head \n\n",reqbuffer.tail +1, reqbuffer.head);
-        logEvent("Worker: Getting request from the queue %d is the tail and %d is the head \n\n",reqbuffer.tail +1, reqbuffer.head);
         req = reqbuffer.requests[reqbuffer.tail];
         gettimeofday(&req.dispatchTime, NULL);
         req.dispatchTime.tv_sec -= req.arrivalTime.tv_sec;
         req.dispatchTime.tv_usec -= req.arrivalTime.tv_usec; 
-        reqbuffer.tail = (reqbuffer.tail + 1) % queueSize; //Increment the tail to get a fifo extraction
+        reqbuffer.tail = (reqbuffer.tail + 1) % QUEUESIZE; //Increment the tail to get a fifo extraction
         reqbuffer.is_full = FALSE;
         pthread_cond_signal(&masterWakeUp);
         //Returns a copy of the struct request
@@ -81,42 +46,33 @@ struct request getRequest()
 }
 int addRequest(int connfd)
 {
-    //printf("Adding request to the queue %d is the tail and %d is the head \n\n",reqbuffer.tail, reqbuffer.head +1 );
-    if((reqbuffer.head + 1) % queueSize == reqbuffer.tail)
+    if((reqbuffer.head + 1) % QUEUESIZE == reqbuffer.tail)
     {
-        logEvent("Buffer is full, cannot add request");
         reqbuffer.is_full = TRUE;
         return RETURNERROR;
         //We are full Return error code
     }
     else
     {
-        logEvent("Adding request to the queue %d is the tail and %d is the head \n\n",reqbuffer.tail, reqbuffer.head +1 );
         reqbuffer.requests[reqbuffer.head].connfd = connfd;
         gettimeofday(&reqbuffer.requests[reqbuffer.head].arrivalTime, NULL);
-        reqbuffer.head = (reqbuffer.head + 1) % queueSize;
+        reqbuffer.head = (reqbuffer.head + 1) % QUEUESIZE;
         reqbuffer.is_empty = FALSE;
         pthread_cond_signal(&workerWakeUp);
-        //Can be broadcast
         return 0; //Success
     }
 }
 
 void overRideLastElement(int connfd)
 {
-    //The queue has to be full since we obtain the lock then checked that it is full 
-    /*
     if(reqbuffer.is_empty)
     {
-        logEvent("Master: Buffer is empty, cannot override last element\n");
-        pthread_cond_signal(&master);
+        pthread_cond_signal(&masterWakeUpWaitUntilQueueIsEmpty);
         perror("Buffer is empty, cannot override last element");
         return;
-    }*/
-    logEvent("Master: Overriding last element in the queue");
+    }
     close(reqbuffer.requests[reqbuffer.tail].connfd); //Closing the connection to the last element
-    reqbuffer.requests[reqbuffer.head].connfd = connfd;
-    gettimeofday(&reqbuffer.requests[reqbuffer.head].arrivalTime, NULL);
+    reqbuffer.requests[reqbuffer.tail].connfd = connfd;
 }
 
 
@@ -172,17 +128,25 @@ void getargs(int *port, int *numOfThreads, int * queueSize,int *schedalg, int ar
 void handleRequest(workerThread *currentThread)
 {
     requestHandle(currentThread);
-    //logEvent("Worker: Request handled, closing connection");
     currentThread->count++;
     close(currentThread->currentRequest.connfd);
 }
-/*
+
 struct request workerSingleThreadRoutine()
 {
-        
+        pthread_mutex_lock(&bufferMutex);
+        while(reqbuffer.is_empty)
+        {
+            pthread_cond_wait(&workerWakeUp, &bufferMutex);
+            //Check that the buffer is not empty and wait on the conditional variable
+            //Ask for resource, get the request, release the resource and startthe route later
+        }
+        struct request req = getRequest();
+        pthread_mutex_unlock(&bufferMutex);
+        return req;
         
 
-}*/
+}
 
 
 void* threadRoutine(void *arg)
@@ -201,20 +165,9 @@ void* threadRoutine(void *arg)
 
     while(1){
         //this part will probably encapsulate the second aprt
-        pthread_mutex_lock(&bufferMutex);
-        while(reqbuffer.is_empty)
-        {
-            pthread_cond_wait(&workerWakeUp, &bufferMutex);
-            //Check that the buffer is not empty and wait on the conditional variable
-            //Ask for resource, get the request, release the resource and startthe route later
-        }
-        currentThread->currentRequest = getRequest();
-        //pthread_cond_signal(&masterWakeUp);
-        pthread_mutex_unlock(&bufferMutex);
-        
+        currentThread->currentRequest = workerSingleThreadRoutine();
         if(currentThread->currentRequest.connfd != RETURNERROR)
         {
-            //logEvent("Worker: Handling request fd is %d, %d", currentThread->currentRequest.connfd);
             handleRequest(currentThread);
         }
     }
@@ -228,7 +181,7 @@ void* threadRoutine(void *arg)
 
 //This is a very dumb function that i 
 void deleteRandomHalf() {
-    int originalSize = (reqbuffer.head - reqbuffer.tail + queueSize) % queueSize;
+    int originalSize = (reqbuffer.head - reqbuffer.tail + QUEUESIZE) % QUEUESIZE;
     int newSize = originalSize / 2;
 
     for (int i = 0; i < originalSize; i++) {
@@ -236,7 +189,7 @@ void deleteRandomHalf() {
 
         if (randNum < 0.5) {
             close(reqbuffer.requests[reqbuffer.tail].connfd);
-            reqbuffer.tail = (reqbuffer.tail + 1) % queueSize;
+            reqbuffer.tail = (reqbuffer.tail + 1) % QUEUESIZE;
             newSize--;
 
             // If we've deleted enough elements, stop
@@ -250,44 +203,51 @@ void deleteRandomHalf() {
 
 int main(int argc, char *argv[])
 {
-    clearLogFile();
-    int connfd, port, clientlen, numOfThreads = NUMBEROFWORKERTHREADS, schedalg = BLOCK;
+    int connfd, port, clientlen, numOfThreads = NUMBEROFWORKERTHREADS, queueSize = 100, schedalg = BLOCK;
     struct sockaddr_in clientaddr;
-    queueSize = 100;
-    getargs(&port, &numOfThreads, &queueSize, &schedalg, argc, argv);
-    
-    //For debugging purposes
-    logEvent("Server Started with arguments: port: %d, numOfThreads: %d, queueSize: %d, schedalg: %d", port, numOfThreads, queueSize, schedalg);
 
-    //queueSize = 100 ;
+    getargs(&port, &numOfThreads, &queueSize, &schedalg, argc, argv);
+
     //Initializing the mutex
+
     signal(SIGINT, handle_sigint);
+
+
+
     if (pthread_mutex_init(&bufferMutex, NULL) != 0) {
         // Handle error
         //Chatgbt Loves to save my ass 
         return 1;
     }
+
+
     //initializing the condition variables
+    
     if(pthread_cond_init(&masterWakeUpWaitUntilQueueIsEmpty, NULL) != 0)
     {
         perror("Condiiton variable is masterWakeUpWaitUntilQueueIsEmpty not set");
         return -1; 
+        
         //Error has occured
     }
+
+
     if(pthread_cond_init(&masterWakeUp, NULL) != 0)
     {
         perror("Condiiton variable is empty not set");
         return -1; 
+        
         //Error has occured
     }
+
     if(pthread_cond_init(&workerWakeUp, NULL) != 0)
     {
         perror("Condiiton variable is full not set");
         return RETURNERROR; 
+        
         //Error has occured
     }
     //Init of the global variable
-    reqbuffer.requests = malloc(sizeof(request)*queueSize);
     reqbuffer.is_empty = TRUE;
     reqbuffer.is_full = FALSE;
     reqbuffer.tail = 0;
@@ -300,7 +260,6 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numOfThreads; i++)
     {
         workerThreads[i].id = i;
-        printf("Creating thread %d\n", i);
         if(pthread_create(&workerThreads[i].thread, NULL, threadRoutine, &workerThreads[i]) != 0)
         {
             perror("Failure creating a Thread for some reason!");
@@ -309,7 +268,6 @@ int main(int argc, char *argv[])
         
     }
     //Threads created.. Now add requests to queue..
-
     listenfd = Open_listenfd(port);
     while (TRUE) 
     {
@@ -317,46 +275,41 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         //Add the request to the queue
         pthread_mutex_lock(&bufferMutex);
-        logEvent("++++++++++Master attained lock, adding request to the queue++++++++++");
+
 
         int block  = FALSE;
         while(reqbuffer.is_full)
         {
-            logEvent("Queue is full");
             if(schedalg == BLOCK)
             {
-                logEvent("Master: Blocking the request and waiting for the the wakup signal from the worker threads");
                 pthread_cond_wait(&masterWakeUp, &bufferMutex);
             }
             else if(schedalg == DT)
             {
-                //Log the dropping of the request 
-                logEvent("Master: Dropping the request");
                 block = TRUE;
                 Close(connfd);
                 //Dropping the request by not adding it to the queue
                 //Design here is abit off
+                break;
             }
             else if (schedalg == DH)
             {
-                logEvent("Master: Dropping the head of the queue");
                 overRideLastElement(connfd);
                 block = TRUE;
+                break;
                 // I need to drop the head of the queue
             }
             else if (schedalg == BF)
             {
-                logEvent("Master: Blocking the request wainting for queue to be empty");
                 //BF and Random
                 //TODO As bonus.. 
                 pthread_cond_wait(&masterWakeUpWaitUntilQueueIsEmpty, &bufferMutex);
+            
             }
             else
             {
                 //DROP RANDOMLY HALF THE REQUESTS
-                logEvent("Master: Dropping randomly half the requests");
                 deleteRandomHalf();
-                break;
                 //Delete randomly half the reuests
 
             }
@@ -365,7 +318,7 @@ int main(int argc, char *argv[])
         }
         if(block == FALSE)
         {
-            logEvent("Master: Adding request to the queue");
+
             addRequest(connfd);
         }
         

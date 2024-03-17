@@ -14,7 +14,7 @@ pthread_mutex_t bufferMutex;
 //Coniditional Variables for the buffer
 pthread_cond_t masterWakeUp; 
 pthread_cond_t workerWakeUp; 
-
+pthread_cond_t masterWakeUpWaitUntilQueueIsEmpty;
 //Global variavles
 
 typedef struct request {
@@ -26,7 +26,8 @@ typedef struct request {
 
 int listenfd; 
 typedef struct requestsBuffer {
-    struct request requests[QUEUESIZE]; // Initialize all elements to 0
+    //struct request requests[100]; // Initialize all elements to 0
+    struct request* requests;
     int head;
     int tail;
     int is_empty; // This is essentially a booleaen 

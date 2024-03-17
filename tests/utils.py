@@ -4,6 +4,7 @@ from time import sleep
 import requests
 from requests_futures.sessions import FuturesSession
 import math
+import json
 
 from definitions import DYNAMIC_OUTPUT_HEADERS, ERROR_OUTPUT_HEADERS, STATIC_OUTPUT_HEADERS
 
@@ -57,6 +58,14 @@ def validate_response(response: requests.models.Response, expected_headers: dict
 
 
 def validate_response_full(response: requests.models.Response, expected_headers: dict, expected: str):
+    response_data = {
+        'status_code': response.status_code,
+        'headers': dict(response.headers),
+        'text': response.text
+    }
+    with open('/home/student/Desktop/OperatingSystemsHw3/tests/response.json', 'w') as f:
+        json.dump(response_data, f, indent=4)
+    
     assert response.status_code == 200
     assert response.headers.keys() == expected_headers.keys(),\
         f"\nExpected:\n{list(expected_headers.keys())}"\
