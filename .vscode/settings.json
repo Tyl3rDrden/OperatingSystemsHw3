@@ -59,6 +59,7 @@
   "files.associations": {
     "type_traits": "c",
     "string.h": "c",
-    "request.h": "c"
+    "request.h": "c",
+    "signal.h": "c"
   }
 }
